@@ -141,3 +141,18 @@ code {
 
   font-size: 20px;
 }
+
+.matrix-input {
+
+  width: 70px;
+
+  height: 45px;
+
+  text-align: center;
+
+  font-size: 18px;
+
+  border-radius: 8px;
+
+  border: 1px solid #555;
+}
