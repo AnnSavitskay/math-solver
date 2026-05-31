@@ -109,3 +109,35 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.matrix-grid {
+  display: inline-block;
+
+  padding: 12px 16px;
+
+  border-left: 3px solid white;
+  border-right: 3px solid white;
+
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.matrix-row {
+  display: flex;
+
+  justify-content: center;
+
+  gap: 24px;
+
+  margin: 8px 0;
+}
+
+.matrix-cell {
+  width: 90px;
+
+  text-align: center;
+
+  font-family: monospace;
+
+  font-size: 20px;
+}

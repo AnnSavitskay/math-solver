@@ -1,9 +1,7 @@
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import DateTime
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, Float, Integer, DateTime, String
 
+from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.orm import declarative_base
 from datetime import datetime
 
 Base = declarative_base()
@@ -13,14 +11,14 @@ class ProblemHistory(Base):
 
     __tablename__ = "history"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
 
-    type = Column(String)
+    matrix_json = Column(JSON)
 
-    input_data = Column(String)
+    determinant = Column(Float)
 
-    result_data = Column(String)
-
+    rank = Column(Integer)
+    
     created_at = Column(
         DateTime,
         default=datetime.utcnow
