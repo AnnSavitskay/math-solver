@@ -43,22 +43,26 @@ function App() {
 	  loadHistory();
 	}
   
-  function createMatrix(rows, cols) {
-	  return Array(rows).fill(null).map(() => Array(cols).fill(""));
-	}
+  function createMatrix(rows_, cols_) {
+  	return Array(rows_).fill(null).map(() => Array(cols_).fill(""));
+  	}
   
-  function changeSizeA(newRows, newCols) {
+  function changeSizeA_rows(newRows) {
 	  setRows(newRows);
-	  setCols(newCols);
-	  setMatrixA(createMatrix(newRows, newCols));
+	  setMatrixA(createMatrix(newRows, cols));
 	}
-
-  function changeSizeB(newRows, newCols) {
+  function changeSizeA_cols(newCols) {
+	  setCols(newCols);
+	  setMatrixA(createMatrix(rows, newCols));
+	}
+  function changeSizeB_rows(newRows) {
 	  setRows(newRows);
-	  setCols(newCols);
-	  setMatrixB(createMatrix(newRows, newCols));
+	  setMatrixB(createMatrix(newRows, cols));
 	}
-	
+  function changeSizeB_cols(newCols) {
+	  setCols(newCols);
+	  setMatrixB(createMatrix(rows, newCols));
+	}
   function updateCell(row, col, value) {
 	  const updated = [...matrixA];
 	  updated[row][col] = value;
@@ -74,7 +78,7 @@ function App() {
 	  if (!matrixData)
 	    return null
 	  if (code == -1)
-	  	return "Matrix cannot be inversed, it is singular"
+	  	return "Matrix cannot be inversed"
 	  if (code == -2)
 	  	return "Matrix A and Matrix B have different dimensions"
 	  if (code == -3)
@@ -148,20 +152,39 @@ function App() {
 	</select>
         <div>
 	  <label>
-	    Size of Matrix A:
+	    Number of Rows for Matrix A:
 	  </label>
 	  <select
 	    value={rows}
-	    onChange={(e) => changeSizeA(Number(e.target.value), Number(e.target.value))}
+	    onChange={(e) => changeSizeA_rows(Number(e.target.value))}
 	  >
 	    <option value={2}>
-	      2x2
+	      2
 	    </option>
 	    <option value={3}>
-	      3x3
+	      3
 	    </option>
 	    <option value={4}>
-	      4x4
+	      4
+	    </option>
+	  </select>
+	</div>
+	 <div>
+	  <label>
+	    Number of Cols for Matrix A:
+	  </label>
+	  <select
+	    value={cols}
+	    onChange={(e) => changeSizeA_cols(Number(e.target.value))}
+	  >
+	    <option value={2}>
+	      2
+	    </option>
+	    <option value={3}>
+	      3
+	    </option>
+	    <option value={4}>
+	      4
 	    </option>
 	  </select>
 	</div>
@@ -196,20 +219,39 @@ function App() {
 	<div>
 		<div>
 		  <label>
-		    Size of Matrix B:
+		    Number of Rows for Matrix B:
 		  </label>
 		  <select
 		    value={rows}
-		    onChange={(e) => changeSizeB(Number(e.target.value), Number(e.target.value))}
+		    onChange={(e) => changeSizeB_rows(Number(e.target.value))}
 		  >
 		    <option value={2}>
-		      2x2
+		      2
 		    </option>
 		    <option value={3}>
-		      3x3
+		      3
 		    </option>
 		    <option value={4}>
-		      4x4
+		      4
+		    </option>
+		  </select>
+		</div>
+		 <div>
+		  <label>
+		    Number of Cols for Matrix B:
+		  </label>
+		  <select
+		    value={cols}
+		    onChange={(e) => changeSizeB_cols(Number(e.target.value))}
+		  >
+		    <option value={2}>
+		      2
+		    </option>
+		    <option value={3}>
+		      3
+		    </option>
+		    <option value={4}>
+		      4
 		    </option>
 		  </select>
 		</div>
@@ -259,13 +301,20 @@ function App() {
 	      marginTop: "20px"
 	    }}
 	  >
-	    {result.determinant !== undefined && (
+	    {(result.determinant !== undefined && result.code !== -4 && (
 	      <p>
 		determinant:
 		{" "}
 		{Number(result.determinant).toFixed(2)}
 	      </p>
-	    )}
+	    )) || 
+	    (result.determinant == undefined && result.code == -4 && (
+	      <p>
+		determinant:
+		{" "}
+		{"Determinant cannot be calculated, the matrix isn't square"}
+	      </p>
+	    ))}
 	    {result.rank !== undefined && (
 	      <p>
 		rank:
