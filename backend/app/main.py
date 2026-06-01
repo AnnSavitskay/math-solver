@@ -18,6 +18,7 @@ app.add_middleware(
 )
 app.include_router(router)
 Base.metadata.create_all(bind=engine)
+
 @app.get("/")
 def home():
     return {"message": "Math Solver API"}

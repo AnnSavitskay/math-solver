@@ -8,6 +8,7 @@ router = APIRouter()
 @router.post("/matrix")
 def matrix(data: dict):
     result_matrix = None
+    matrix_code = 0
     A = np.array(data["matrixA"])
     B = np.array(data.get("matrixB", []))
     operation =data.get("operation","det")
@@ -15,42 +16,50 @@ def matrix(data: dict):
     if operation == "det":
         determinant = float(np.linalg.det(A))
         rank = int(np.linalg.matrix_rank(A))
-        result = {"determinant": determinant, "rank": rank}
+        result_matrix = A.tolist()
+        result = {"determinant": determinant, "rank": rank, "code": matrix_code}
 
     elif operation == "inverse":
-        result_matrix = (np.linalg.inv(A).tolist())
-        determinant = float(np.linalg.det(A))
-        rank = int(np.linalg.matrix_rank(A))
-        result = {"determinant": determinant, "rank": rank, "inverse": result_matrix}
+    	try:
+    		result_matrix = (np.linalg.inv(A).tolist())
+    	except np.linalg.LinAlgError:
+    		matrix_code = -1
+    		result_matrix = A.tolist()
+    	rank = int(np.linalg.matrix_rank(A))
+    	result = {"rank": rank, "inverse": result_matrix, "code": matrix_code}
 
     elif operation == "transpose":
         result_matrix = (A.T.tolist())
-        determinant = float(np.linalg.det(A))
         rank = int(np.linalg.matrix_rank(A))
-        result = {"determinant": determinant, "rank": rank, "transpose": result_matrix}
+        result = {"rank": rank, "transpose": result_matrix, "code": matrix_code}
 
     elif operation == "add":
-        result_matrix = (A + B).tolist()
-        determinant = float(np.linalg.det(A))
-        rank = int(np.linalg.matrix_rank(A))
-        result = {"determinant": determinant, "rank": rank, "add": result_matrix}
+    	if A.shape[0] != B.shape[0] or A.shape[1] != B.shape[1]:
+    		matrix_code = -2
+    		result_matrix = A.tolist()
+    	else:
+    		result_matrix = (A + B).tolist()
+    	rank = int(np.linalg.matrix_rank(result_matrix))
+    	result = {"rank": rank, "sum": result_matrix, "code": matrix_code}
 
     elif operation == "multiply":
-        result_matrix = (A @ B).tolist()
-        determinant = float(np.linalg.det(A))
-        rank = int(np.linalg.matrix_rank(A))
-        result = {"determinant": determinant, "rank": rank, "multiply": result_matrix}
+    	if A.shape[1] != B.shape[0]:
+    		matrix_code = -3
+    		result_matrix = A.tolist()
+    	else:
+    		result_matrix = (A @ B).tolist()
+    	rank = int(np.linalg.matrix_rank(result_matrix))
+    	result = {"rank": rank, "product": result_matrix, "code": matrix_code}
 
     elif operation == "eigen":
         eigenvalues, eigenvectors = (np.linalg.eig(A))
         result["eigenvalues"] = (eigenvalues.tolist())
         result_matrix = (eigenvectors.tolist())
-        determinant = float(np.linalg.det(A))
-        rank = int(np.linalg.matrix_rank(A))
-        result = {"determinant": determinant, "rank": rank, "eigenvalues": result["eigenvalues"], "eigenvectors": result_matrix}
+        rank = int(np.linalg.matrix_rank(result_matrix))
+        result = {"rank": rank, "eigenvalues": result["eigenvalues"], "eigenvectors": result_matrix, "code": matrix_code}
 
     db =SessionLocal()
-    entry = ProblemHistory(matrix_json=A.tolist(),determinant=result.get("determinant"),rank=result.get("rank"), result_json = result_matrix)
+    entry = ProblemHistory(matrixA_json=A.tolist(), matrixB_json=B.tolist(), code = matrix_code, rank=result.get("rank"), result_json = result_matrix)
     db.add(entry)
     db.commit()
     db.close()
@@ -66,11 +75,17 @@ def history():
         result.append(
             {
                 "id": row.id,
-                "matrix": row.matrix_json,
+                "matrixA": row.matrixA_json,
+                "matrixB": row.matrixB_json,
+                "code": row.code,
                 "result": row.result_json, 
-                "determinant": row.determinant,
                 "rank": row.rank,
             }
         )
     db.close()
     return result
+
+#Добавить Жордановы формы
+#Добавить возможность выбора разных размерностей для матриц
+#Пофиксить UI
+#пофиксить ошибки

@@ -9,8 +9,9 @@ Base = declarative_base()
 class ProblemHistory(Base):
     __tablename__ = "history"
     id = Column(Integer, primary_key=True, index=True)
-    matrix_json = Column(JSON)
-    determinant = Column(Float)
+    matrixA_json = Column(JSON)
+    matrixB_json = Column(JSON)
+    code = Column(Integer)
     rank = Column(Integer)
     result_json = Column(JSON)   
     created_at = Column(

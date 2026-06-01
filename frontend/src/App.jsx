@@ -47,10 +47,15 @@ function App() {
 	  return Array(rows).fill(null).map(() => Array(cols).fill(""));
 	}
   
-  function changeSize(newRows, newCols) {
+  function changeSizeA(newRows, newCols) {
 	  setRows(newRows);
 	  setCols(newCols);
 	  setMatrixA(createMatrix(newRows, newCols));
+	}
+
+  function changeSizeB(newRows, newCols) {
+	  setRows(newRows);
+	  setCols(newCols);
 	  setMatrixB(createMatrix(newRows, newCols));
 	}
 	
@@ -65,9 +70,15 @@ function App() {
 	  setMatrixB(updated);
 	}
 	
- function renderMatrix(matrixData) {
+ function renderMatrix(matrixData, code) {
 	  if (!matrixData)
-	    return null;
+	    return null
+	  if (code == -1)
+	  	return "Matrix cannot be inversed, it is singular"
+	  if (code == -2)
+	  	return "Matrix A and Matrix B have different dimensions"
+	  if (code == -3)
+	  	return "Matrix A and Matrix B have different dimensions, can not be multiplied"
 	  return (
 	    <div className="matrix-grid">
 	      {matrixData.map((row, rowIndex) => (
@@ -137,11 +148,11 @@ function App() {
 	</select>
         <div>
 	  <label>
-	    Size:
+	    Size of Matrix A:
 	  </label>
 	  <select
 	    value={rows}
-	    onChange={(e) => changeSize(Number(e.target.value), Number(e.target.value))}
+	    onChange={(e) => changeSizeA(Number(e.target.value), Number(e.target.value))}
 	  >
 	    <option value={2}>
 	      2x2
@@ -182,6 +193,26 @@ function App() {
 	    )
 	  }
 	{needsSecondMatrix && (
+	<div>
+		<div>
+		  <label>
+		    Size of Matrix B:
+		  </label>
+		  <select
+		    value={rows}
+		    onChange={(e) => changeSizeB(Number(e.target.value), Number(e.target.value))}
+		  >
+		    <option value={2}>
+		      2x2
+		    </option>
+		    <option value={3}>
+		      3x3
+		    </option>
+		    <option value={4}>
+		      4x4
+		    </option>
+		  </select>
+		</div>
 	  <div>
 	    <h3>
 	      Matrix B
@@ -207,6 +238,7 @@ function App() {
 		</div>
 	      )
 	    )}
+	  </div>
 	  </div>
 	)}
 	</div>
@@ -246,7 +278,7 @@ function App() {
 		<p>
 		  inverse:
 		</p>
-		{renderMatrix(result.inverse)}
+		{renderMatrix(result.inverse, result.code)}
 	      </div>
 	    )}
 	    {result.transpose && (
@@ -262,7 +294,7 @@ function App() {
 		<p>
 		  A + B:
 		</p>
-		{renderMatrix(result.sum)}
+		{renderMatrix(result.sum, result.code)}
 	      </div>
 	    )}
 	    {result.product && (
@@ -270,7 +302,7 @@ function App() {
 		<p>
 		  A × B:
 		</p>
-		{renderMatrix(result.product)}
+		{renderMatrix(result.product, result.code)}
 	      </div>
 	    )}
 	    {result.eigenvalues && (
@@ -321,19 +353,15 @@ function App() {
 		    "1px solid #eee"
 		}}
 	      >
-		{renderMatrix(item.matrix)}
-		<p>
-		  det = {" "}{Number(item.determinant).toFixed(2)}
-		</p>
+		{renderMatrix(item.result, 0)}
 		<p>
 		  rank ={" "}{item.rank}
 		</p>
-		{renderMatrix(item.result)}
 	 	<button
 		  onClick={() => {
-		    setMatrixA(item.matrix);
-		    setRows(item.matrix.length);
-		    setCols(item.matrix[0].length);
+		    setMatrixA(item.result);
+		    setRows(item.result.length);
+		    setCols(item.result[0].length);
 		  }}
 		>
 		  Use this matrix
