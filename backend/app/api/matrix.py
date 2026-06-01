@@ -2,8 +2,32 @@ from fastapi import APIRouter
 from app.database import SessionLocal
 from app.models.history import ProblemHistory
 import numpy as np
+from sympy import Matrix
+import json
 
 router = APIRouter()
+
+def to_complex(data):
+	if isinstance(data, dict):
+		if isinstance(data.get("real", 0), str):
+			data['real'] = float(data['real'])
+		if isinstance(data.get("imaginary", 0), str):
+			data['imaginary'] = float(data['imaginary'])
+		return complex(data.get("real", 0), data.get("imaginary", 0))
+	if isinstance(data, str):
+		return complex(data.replace("i", "j"))
+	return complex(data)
+	
+def to_string(data):
+	if isinstance(data, complex):
+		if isinstance(data.get("real", 0), str):
+			data['real'] = float(data['real'])
+		if isinstance(data.get("imaginary", 0), str):
+			data['imaginary'] = float(data['imaginary'])
+		return complex(data.get("real", 0), data.get("imaginary", 0))
+	if isinstance(data, str):
+		return complex(data.replace("i", "j"))
+	return complex(data)
 
 @router.post("/matrix")
 def matrix(data: dict):
@@ -11,18 +35,49 @@ def matrix(data: dict):
     matrix_code = 0
     A = np.array(data["matrixA"])
     B = np.array(data.get("matrixB", []))
+    A = np.array([[to_complex(x) for x in y] for y in A])
+    if B.size != 1:
+    	B = np.array([[to_complex(x) for x in y] for y in B])
     operation =data.get("operation","det")
     result = {}
     if operation == "det":
     	try:
-    		determinant = float(np.linalg.det(A))
+    		determinant = str(np.linalg.det(A))
     	except np.linalg.LinAlgError:
     		determinant = None
     		matrix_code = -4
     	rank = int(np.linalg.matrix_rank(A))
     	result_matrix = A.tolist()
+    	result_matrix = [[str(to_complex(x)) for x in y] for y in result_matrix]
+    	result_matrix = json.dumps(result_matrix)
     	result = {"determinant": determinant, "rank": rank, "code": matrix_code}
 
+    elif operation == "solve":
+    	try:
+    		result_matrix = (np.linalg.solve(A, B).tolist())
+    	except np.linalg.LinAlgError:
+    		matrix_code = -5
+    		result_matrix = A.tolist()
+    	rank = int(np.linalg.matrix_rank(result_matrix))
+    	result_matrix = [[str(to_complex(x)) for x in y] for y in result_matrix]
+    	result_matrix = json.dumps(result_matrix)
+    	result = {"rank": rank, "solve": result_matrix, "code": matrix_code}
+    	
+    elif operation == "jordan":
+    	try:
+    		mat = Matrix(A)
+    		jordan_form = mat.jordan_form()
+    		result_matrix_1 = np.array(jordan_form).astype(complex)[0].tolist()
+    		result_matrix = np.array(jordan_form).astype(str)[0].tolist()
+    	except ValueError:
+    		matrix_code = -6
+    		result_matrix_1 = A.tolist()
+    		result_matrix = A.tolist()
+    	rank = int(np.linalg.matrix_rank(result_matrix_1))
+    	result_matrix = [[str(to_complex(x)) for x in y] for y in result_matrix]
+    	result_matrix = json.dumps(result_matrix)
+    	result = {"rank": rank, "jordan": result_matrix, "code": matrix_code}
+    	
     elif operation == "inverse":
     	try:
     		result_matrix = (np.linalg.inv(A).tolist())
@@ -30,11 +85,15 @@ def matrix(data: dict):
     		matrix_code = -1
     		result_matrix = A.tolist()
     	rank = int(np.linalg.matrix_rank(A))
+    	result_matrix = [[str(to_complex(x)) for x in y] for y in result_matrix]
+    	result_matrix = json.dumps(result_matrix)
     	result = {"rank": rank, "inverse": result_matrix, "code": matrix_code}
 
     elif operation == "transpose":
         result_matrix = (A.T.tolist())
         rank = int(np.linalg.matrix_rank(A))
+        result_matrix = [[str(to_complex(x)) for x in y] for y in result_matrix]
+        result_matrix = json.dumps(result_matrix)
         result = {"rank": rank, "transpose": result_matrix, "code": matrix_code}
 
     elif operation == "add":
@@ -44,6 +103,8 @@ def matrix(data: dict):
     	else:
     		result_matrix = (A + B).tolist()
     	rank = int(np.linalg.matrix_rank(result_matrix))
+    	result_matrix = [[str(to_complex(x)) for x in y] for y in result_matrix]
+    	result_matrix = json.dumps(result_matrix)
     	result = {"rank": rank, "sum": result_matrix, "code": matrix_code}
 
     elif operation == "multiply":
@@ -53,17 +114,21 @@ def matrix(data: dict):
     	else:
     		result_matrix = (A @ B).tolist()
     	rank = int(np.linalg.matrix_rank(result_matrix))
+    	result_matrix = [[str(to_complex(x)) for x in y] for y in result_matrix]
+    	result_matrix = json.dumps(result_matrix)
     	result = {"rank": rank, "product": result_matrix, "code": matrix_code}
 
     elif operation == "eigen":
         eigenvalues, eigenvectors = (np.linalg.eig(A))
-        result["eigenvalues"] = (eigenvalues.tolist())
+        result["eigenvalues"] = (eigenvalues.astype(str).tolist())
         result_matrix = (eigenvectors.tolist())
         rank = int(np.linalg.matrix_rank(result_matrix))
+        result_matrix = [[str(x) for x in y] for y in result_matrix]
+        result_matrix = json.dumps(result_matrix)
         result = {"rank": rank, "eigenvalues": result["eigenvalues"], "eigenvectors": result_matrix, "code": matrix_code}
 
     db =SessionLocal()
-    entry = ProblemHistory(matrixA_json=A.tolist(), matrixB_json=B.tolist(), code = matrix_code, rank=result.get("rank"), result_json = result_matrix)
+    entry = ProblemHistory(matrixA_json=A.astype(str).tolist(), matrixB_json=B.astype(str).tolist(), code = matrix_code, rank=result.get("rank"), result_json = result_matrix)
     db.add(entry)
     db.commit()
     db.close()

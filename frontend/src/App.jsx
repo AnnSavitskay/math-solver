@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
+import { convertToComplex, Complex } from "./Complex.jsx";
 
 function App() {
-  const [rows, setRows] = useState(2);
-  const [cols, setCols] = useState(2);
+  const [rowsA, setRowsA] = useState(2);
+  const [colsA, setColsA] = useState(2);
+  const [rowsB, setRowsB] = useState(2);
+  const [colsB, setColsB] = useState(2);
   const [matrixA, setMatrixA] = useState([["", ""],["", ""]]);
   const [matrixB, setMatrixB] = useState([["", ""],["", ""]]);
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [operation, setOperation] = useState("det");
-  const needsSecondMatrix = operation === "add" || operation === "multiply";
+  const needsSecondMatrix = operation === "add" || operation === "multiply" || operation === "solve";
   useEffect(() => {loadHistory();}, []);
 
   const loadHistory =
@@ -19,8 +22,8 @@ function App() {
     };
 
   async function solve() {
-	  const matrixDataA = matrixA.map(row => row.map(Number));
-	  const matrixDataB = matrixB.map(row => row.map(Number));
+	  const matrixDataA = matrixA.map(row => row.map(cell => convertToComplex(cell)));
+	  const matrixDataB = matrixB.map(row => row.map(cell => convertToComplex(cell)));
 	  const response = await fetch("http://127.0.0.1:8000/matrix",
 	      {
 		method: "POST",
@@ -42,47 +45,69 @@ function App() {
 	  setResult(data);
 	  loadHistory();
 	}
+  async function clearA() { 
+  	const updated = matrixA.map((row, rowIndex) => row.map((value, colIndex) => (0)));
+  	setMatrixA(updated); 
+  	}
+  async function clearB() { 
+  	const updated = matrixB.map((row, rowIndex) => row.map((value, colIndex) => (0)));
+  	setMatrixB(updated); 
+  	}
   
   function createMatrix(rows_, cols_) {
   	return Array(rows_).fill(null).map(() => Array(cols_).fill(""));
   	}
   
   function changeSizeA_rows(newRows) {
-	  setRows(newRows);
-	  setMatrixA(createMatrix(newRows, cols));
+	  setRowsA(newRows);
+	  setMatrixA(createMatrix(newRows, colsA));
 	}
   function changeSizeA_cols(newCols) {
-	  setCols(newCols);
-	  setMatrixA(createMatrix(rows, newCols));
+	  setColsA(newCols);
+	  setMatrixA(createMatrix(rowsA, newCols));
 	}
   function changeSizeB_rows(newRows) {
-	  setRows(newRows);
-	  setMatrixB(createMatrix(newRows, cols));
+	  setRowsB(newRows);
+	  setMatrixB(createMatrix(newRows, colsB));
 	}
   function changeSizeB_cols(newCols) {
-	  setCols(newCols);
-	  setMatrixB(createMatrix(rows, newCols));
+	  setColsB(newCols);
+	  setMatrixB(createMatrix(rowsB, newCols));
 	}
   function updateCell(row, col, value) {
-	  const updated = [...matrixA];
-	  updated[row][col] = value;
+	  const updated = matrixA.map((r, ri) => r.map((c, ci) => (ri === row && ci === col ? value : c)));
 	  setMatrixA(updated);
 	}
- function updateCellB(row, col, value) {
-	  const updated = [...matrixB];
-	  updated[row][col] = value;
+  function updateCellB(row, col, value) {
+ 	  const updated = matrixB.map((r, ri) => r.map((c, ci) => (ri === row && ci === col ? value : c)));
 	  setMatrixB(updated);
 	}
 	
+ function check_value(value) {
+ 	if (typeof value === "string") {
+ 		value = convertToComplex(value)
+ 		return value.toString()
+ 	}
+ 	return Number(value).toFixed(2)
+ }
+ 
+ function check_matrix(matrixData) {
+ 	if (typeof matrixData === 'string'){
+	  	matrixData = JSON.parse(matrixData)
+	  }
+	return matrixData
+ }
+ 	
  function renderMatrix(matrixData, code) {
-	  if (!matrixData)
-	    return null
-	  if (code == -1)
-	  	return "Matrix cannot be inversed"
-	  if (code == -2)
-	  	return "Matrix A and Matrix B have different dimensions"
-	  if (code == -3)
-	  	return "Matrix A and Matrix B have different dimensions, can not be multiplied"
+	  if (!matrixData) return null
+	  if (code == -1) return "Matrix cannot be inversed"
+	  if (code == -2) return "Matrix A and Matrix B have different dimensions"
+	  if (code == -3) return "Matrix A and Matrix B have different dimensions, can not be multiplied"
+	  if (code == -5) return "Equation has no solution"
+	  if (code == -6) return "There is no Jordan form for this matrix"
+	  if (typeof matrixData === 'string'){
+	  	matrixData = JSON.parse(matrixData)
+	  }
 	  return (
 	    <div className="matrix-grid">
 	      {matrixData.map((row, rowIndex) => (
@@ -95,9 +120,7 @@ function App() {
 		          key={colIndex}
 		          className="matrix-cell"
 		        >
-		          {
-		            Number(value).toFixed(2)
-		          }
+		          {check_value(value)}
 		        </span>
 		      )
 		    )}
@@ -143,11 +166,17 @@ function App() {
 	<option value="add">
 	  Add A+B
 	</option>
+	<option value="solve">
+	  Solve Matrix equation
+	</option>
 	<option value="multiply">
 	  Multiply A×B
 	</option>
 	<option value="eigen">
 	  Eigenvalues
+	</option>
+	<option value="jordan">
+	  Jordan form
 	</option>
 	</select>
         <div>
@@ -155,7 +184,7 @@ function App() {
 	    Number of Rows for Matrix A:
 	  </label>
 	  <select
-	    value={rows}
+	    value={rowsA}
 	    onChange={(e) => changeSizeA_rows(Number(e.target.value))}
 	  >
 	    <option value={2}>
@@ -174,7 +203,7 @@ function App() {
 	    Number of Cols for Matrix A:
 	  </label>
 	  <select
-	    value={cols}
+	    value={colsA}
 	    onChange={(e) => changeSizeA_cols(Number(e.target.value))}
 	  >
 	    <option value={2}>
@@ -188,6 +217,17 @@ function App() {
 	    </option>
 	  </select>
 	</div>
+	 <button
+          onClick={clearA}
+          style={{
+            marginTop: "10px",
+            padding:
+              "10px 20px",
+            cursor: "pointer"
+          }}
+        >
+          Clear MatrixA
+        </button>
 	<div>
 	  <h3>
 	    Matrix A
@@ -200,7 +240,7 @@ function App() {
 		  {row.map((cell, colIndex) => (
 		        <input
 		          key={colIndex}
-		          type="number"
+		          type="text"
 		          value={cell}
 		          onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
 		          style={{
@@ -222,7 +262,7 @@ function App() {
 		    Number of Rows for Matrix B:
 		  </label>
 		  <select
-		    value={rows}
+		    value={rowsB}
 		    onChange={(e) => changeSizeB_rows(Number(e.target.value))}
 		  >
 		    <option value={2}>
@@ -241,7 +281,7 @@ function App() {
 		    Number of Cols for Matrix B:
 		  </label>
 		  <select
-		    value={cols}
+		    value={colsB}
 		    onChange={(e) => changeSizeB_cols(Number(e.target.value))}
 		  >
 		    <option value={2}>
@@ -255,6 +295,17 @@ function App() {
 		    </option>
 		  </select>
 		</div>
+	<button
+          onClick={clearB}
+          style={{
+            marginTop: "10px",
+            padding:
+              "10px 20px",
+            cursor: "pointer"
+          }}
+        >
+          Clear MatrixB
+        </button>
 	  <div>
 	    <h3>
 	      Matrix B
@@ -267,7 +318,7 @@ function App() {
 		  {row.map((cell, colIndex) => (
 		      <input
 		        key={colIndex}
-		        type="number"
+		        type="text"
 		        value={cell}
 		        onChange={(e) => updateCellB(rowIndex, colIndex, e.target.value)}
 		        style={{
@@ -305,10 +356,10 @@ function App() {
 	      <p>
 		determinant:
 		{" "}
-		{Number(result.determinant).toFixed(2)}
+		{check_value(result.determinant)}
 	      </p>
 	    )) || 
-	    (result.determinant == undefined && result.code == -4 && (
+	    (result.determinant === undefined && result.code === -4 && (
 	      <p>
 		determinant:
 		{" "}
@@ -346,6 +397,14 @@ function App() {
 		{renderMatrix(result.sum, result.code)}
 	      </div>
 	    )}
+	    {result.solve && (
+	      <div>
+		<p>
+		  Solution:
+		</p>
+		{renderMatrix(result.solve, result.code)}
+	      </div>
+	    )}
 	    {result.product && (
 	      <div>
 		<p>
@@ -364,7 +423,7 @@ function App() {
 		        key={index}
 		      >
 		        λ{index + 1}:{" "}
-		        {Number(value).toFixed(2)}
+		        {check_value(value)}
 		      </p>
 		    )
 		  )
@@ -379,6 +438,14 @@ function App() {
 		{
 		  renderMatrix(result.eigenvectors)
 		}
+	      </div>
+	    )}
+	    {result.jordan && (
+	      <div>
+		<p>
+		  Jordan form:
+		</p>
+		{renderMatrix(result.jordan, result.code)}
 	      </div>
 	    )}
 	  </div>
@@ -408,9 +475,9 @@ function App() {
 		</p>
 	 	<button
 		  onClick={() => {
-		    setMatrixA(item.result);
-		    setRows(item.result.length);
-		    setCols(item.result[0].length);
+		    setMatrixA(check_matrix(item.result));
+		    setRowsA(item.result.length);
+		    setColsA(item.result[0].length);
 		  }}
 		>
 		  Use this matrix
