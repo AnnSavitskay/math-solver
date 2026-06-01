@@ -14,10 +14,14 @@ def matrix(data: dict):
     operation =data.get("operation","det")
     result = {}
     if operation == "det":
-        determinant = float(np.linalg.det(A))
-        rank = int(np.linalg.matrix_rank(A))
-        result_matrix = A.tolist()
-        result = {"determinant": determinant, "rank": rank, "code": matrix_code}
+    	try:
+    		determinant = float(np.linalg.det(A))
+    	except np.linalg.LinAlgError:
+    		determinant = None
+    		matrix_code = -4
+    	rank = int(np.linalg.matrix_rank(A))
+    	result_matrix = A.tolist()
+    	result = {"determinant": determinant, "rank": rank, "code": matrix_code}
 
     elif operation == "inverse":
     	try:
@@ -86,6 +90,5 @@ def history():
     return result
 
 #Добавить Жордановы формы
-#Добавить возможность выбора разных размерностей для матриц
 #Пофиксить UI
 #пофиксить ошибки
