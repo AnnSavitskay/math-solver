@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { convertToComplex, Complex } from "./Complex.jsx";
 
 function App() {
-  const [rowsA, setRowsA] = useState(2);
-  const [colsA, setColsA] = useState(2);
-  const [rowsB, setRowsB] = useState(2);
-  const [colsB, setColsB] = useState(2);
+  const [rowsA, setRowsA] = useState("");
+  const [colsA, setColsA] = useState("");
+  const [rowsB, setRowsB] = useState("");
+  const [colsB, setColsB] = useState("");
   const [matrixA, setMatrixA] = useState([["", ""],["", ""]]);
   const [matrixB, setMatrixB] = useState([["", ""],["", ""]]);
   const [result, setResult] = useState(null);
@@ -105,6 +105,7 @@ function App() {
 	  if (code == -3) return "Matrix A and Matrix B have different dimensions, can not be multiplied"
 	  if (code == -5) return "Equation has no solution"
 	  if (code == -6) return "There is no Jordan form for this matrix"
+	  if (code == -7) return "There are no Eigenvectors form for this matrix"
 	  if (typeof matrixData === 'string'){
 	  	matrixData = JSON.parse(matrixData)
 	  }
@@ -179,7 +180,7 @@ function App() {
 	  Jordan form
 	</option>
 	</select>
-        <div>
+        <div className="size-controls">
 	  <label>
 	    Number of Rows for Matrix A:
 	  </label>
@@ -187,6 +188,7 @@ function App() {
 	    value={rowsA}
 	    onChange={(e) => changeSizeA_rows(Number(e.target.value))}
 	  >
+	    <option value="" disabled selected hidden>Choose an option</option>
 	    <option value={2}>
 	      2
 	    </option>
@@ -198,7 +200,7 @@ function App() {
 	    </option>
 	  </select>
 	</div>
-	 <div>
+	 <div className="size-controls">
 	  <label>
 	    Number of Cols for Matrix A:
 	  </label>
@@ -206,6 +208,7 @@ function App() {
 	    value={colsA}
 	    onChange={(e) => changeSizeA_cols(Number(e.target.value))}
 	  >
+	    <option value="" disabled selected hidden>Choose an option</option>
 	    <option value={2}>
 	      2
 	    </option>
@@ -243,10 +246,7 @@ function App() {
 		          type="text"
 		          value={cell}
 		          onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
-		          style={{
-		            width: "60px",
-		            margin: "5px"
-		          }}
+		          className="matrix-input"
 		        />
 		      )
 		    )
@@ -257,7 +257,7 @@ function App() {
 	  }
 	{needsSecondMatrix && (
 	<div>
-		<div>
+		<div className="size-controls">
 		  <label>
 		    Number of Rows for Matrix B:
 		  </label>
@@ -276,7 +276,7 @@ function App() {
 		    </option>
 		  </select>
 		</div>
-		 <div>
+		 <div className="size-controls">
 		  <label>
 		    Number of Cols for Matrix B:
 		  </label>
@@ -321,10 +321,7 @@ function App() {
 		        type="text"
 		        value={cell}
 		        onChange={(e) => updateCellB(rowIndex, colIndex, e.target.value)}
-		        style={{
-		          width: "60px",
-		          margin: "5px"
-		        }}
+		        className="matrix-input"
 		      />
 		    )
 		  )}
@@ -359,7 +356,7 @@ function App() {
 		{check_value(result.determinant)}
 	      </p>
 	    )) || 
-	    (result.determinant === undefined && result.code === -4 && (
+	    (result.determinant == undefined && result.code == -4 && (
 	      <p>
 		determinant:
 		{" "}
@@ -413,7 +410,7 @@ function App() {
 		{renderMatrix(result.product, result.code)}
 	      </div>
 	    )}
-	    {result.eigenvalues && (
+	    {result.eigenvalues && result.code !== -7 && (
 	      <div>
 		<p>
 		  eigenvalues:
@@ -436,7 +433,7 @@ function App() {
 		  eigenvectors:
 		</p>
 		{
-		  renderMatrix(result.eigenvectors)
+		  renderMatrix(result.eigenvectors, result.code)
 		}
 	      </div>
 	    )}
@@ -451,13 +448,7 @@ function App() {
 	  </div>
 	)}
 	</div>
-      <div
-	  style={{
-	    width: "320px",
-	    borderLeft: "1px solid #ddd",
-	    paddingLeft: "20px"
-	  }}
-	>
+	<div className="history-panel" style={{ width: "320px", borderLeft: "1px solid #ddd", paddingLeft: "20px" }}>
 	  <h2>Recent calculations</h2>
 	  {history.map(item => (
 	      <div
@@ -476,8 +467,8 @@ function App() {
 	 	<button
 		  onClick={() => {
 		    setMatrixA(check_matrix(item.result));
-		    setRowsA(item.result.length);
-		    setColsA(item.result[0].length);
+		    setRowsA(check_matrix(item.result).length);
+		    setColsA(check_matrix(item.result)[0].length);
 		  }}
 		>
 		  Use this matrix

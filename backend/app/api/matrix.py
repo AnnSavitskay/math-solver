@@ -119,13 +119,21 @@ def matrix(data: dict):
     	result = {"rank": rank, "product": result_matrix, "code": matrix_code}
 
     elif operation == "eigen":
-        eigenvalues, eigenvectors = (np.linalg.eig(A))
-        result["eigenvalues"] = (eigenvalues.astype(str).tolist())
-        result_matrix = (eigenvectors.tolist())
-        rank = int(np.linalg.matrix_rank(result_matrix))
-        result_matrix = [[str(x) for x in y] for y in result_matrix]
-        result_matrix = json.dumps(result_matrix)
-        result = {"rank": rank, "eigenvalues": result["eigenvalues"], "eigenvectors": result_matrix, "code": matrix_code}
+    	try:
+    		eigenvalues, eigenvectors = (np.linalg.eig(A))
+    	except np.linalg.LinAlgError:
+    		matrix_code = -7
+    		eigenvalues = None
+    		eigenvectors = A
+    	if not isinstance(eigenvalues, np.ndarray):
+    		result["eigenvalues"] = None
+    	else:
+    		result["eigenvalues"] = (eigenvalues.astype(str).tolist())
+    	result_matrix = (eigenvectors.tolist())
+    	rank = int(np.linalg.matrix_rank(result_matrix))
+    	result_matrix = [[str(x) for x in y] for y in result_matrix]
+    	result_matrix = json.dumps(result_matrix)
+    	result = {"rank": rank, "eigenvalues": result["eigenvalues"], "eigenvectors": result_matrix, "code": matrix_code}
 
     db =SessionLocal()
     entry = ProblemHistory(matrixA_json=A.astype(str).tolist(), matrixB_json=B.astype(str).tolist(), code = matrix_code, rank=result.get("rank"), result_json = result_matrix)

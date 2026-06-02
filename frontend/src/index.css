@@ -112,47 +112,104 @@ code {
 
 .matrix-grid {
   display: inline-block;
-
   padding: 12px 16px;
-
   border-left: 3px solid white;
   border-right: 3px solid white;
-
   margin-top: 10px;
   margin-bottom: 10px;
 }
 
 .matrix-row {
   display: flex;
-
   justify-content: center;
-
-  gap: 24px;
-
-  margin: 8px 0;
+  gap: 10px;  
+  margin: 6px 0;
 }
 
 .matrix-cell {
   width: 90px;
-
   text-align: center;
-
   font-family: monospace;
-
   font-size: 20px;
 }
 
 .matrix-input {
-
-  width: 70px;
-
-  height: 45px;
-
+  width: 80px;
+  height: 48px;
   text-align: center;
+  font-size: 20px;
+  font-family: 'Arial', sans-serif; 
+  font-variant-numeric: tabular-nums;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text-h);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.5px;
+}
 
-  font-size: 18px;
+.matrix-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
 
+button {
+  padding: 10px 20px;
   border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 15px;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  margin-top: 10px;
+}
+button:hover {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
 
-  border: 1px solid #555;
+select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text-h);
+  font-size: 15px;
+  font-family: var(--sans);
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.size-controls {
+  justify-content: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 15px;
+}
+.size-controls label {
+  color: var(--text);
+}
+
+.history-panel .matrix-cell {
+  width: auto;
+  min-width: 60px;
+  font-size: 13px;
+  padding: 0 4px;
+}
+
+.history-panel .matrix-row {
+  gap: 8px;
+}
+
+.history-panel .matrix-grid {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 8px 10px;
 }
