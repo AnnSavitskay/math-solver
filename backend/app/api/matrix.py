@@ -7,27 +7,42 @@ import json
 
 router = APIRouter()
 
+import re
+
 def to_complex(data):
-	if isinstance(data, dict):
-		if isinstance(data.get("real", 0), str):
-			data['real'] = float(data['real'])
-		if isinstance(data.get("imaginary", 0), str):
-			data['imaginary'] = float(data['imaginary'])
-		return complex(data.get("real", 0), data.get("imaginary", 0))
-	if isinstance(data, str):
-		return complex(data.replace("i", "j"))
-	return complex(data)
-	
-def to_string(data):
-	if isinstance(data, complex):
-		if isinstance(data.get("real", 0), str):
-			data['real'] = float(data['real'])
-		if isinstance(data.get("imaginary", 0), str):
-			data['imaginary'] = float(data['imaginary'])
-		return complex(data.get("real", 0), data.get("imaginary", 0))
-	if isinstance(data, str):
-		return complex(data.replace("i", "j"))
-	return complex(data)
+    if isinstance(data, dict):
+        if isinstance(data.get("real", 0), str):
+            data['real'] = float(data['real'])
+        if isinstance(data.get("imaginary", 0), str):
+            data['imaginary'] = float(data['imaginary'])
+        return complex(data.get("real", 0), data.get("imaginary", 0))
+    
+    if isinstance(data, (int, float)):
+        return complex(data)
+    
+    if isinstance(data, str):
+        # убираем пробелы и приводим к стандартному виду
+        s = data.strip()
+        
+        # формат sympy: "a + b*I" или "a - b*I" или просто "b*I"
+        s = re.sub(r'\*I', 'j', s)   # *I → j
+        s = re.sub(r'\bI\b', 'j', s) # одиночное I → j
+        s = re.sub(r'\bi\b', 'j', s) # одиночное i → j
+        s = s.replace('i', 'j')      # остальные i → j
+        s = re.sub(r'\s+', '', s)    # убираем все пробелы
+        
+        try:
+            return complex(s)
+        except ValueError:
+            # последняя попытка — парсим вручную
+            match = re.match(r'^([+-]?\d*\.?\d+(?:e[+-]?\d+)?)?([+-]\d*\.?\d+(?:e[+-]?\d+)?)?j$', s)
+            if match:
+                real = float(match.group(1)) if match.group(1) else 0
+                imag = float(match.group(2).replace('j', '')) if match.group(2) else 0
+                return complex(real, imag)
+            return complex(0, 0)
+    
+    return complex(data)
 
 @router.post("/matrix")
 def matrix(data: dict):

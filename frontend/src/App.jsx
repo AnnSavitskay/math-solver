@@ -12,6 +12,7 @@ function App() {
   const [history, setHistory] = useState([]);
   const [operation, setOperation] = useState("det");
   const needsSecondMatrix = operation === "add" || operation === "multiply" || operation === "solve";
+  const [hasErrors, setHasErrors] = useState(false);
   useEffect(() => {loadHistory();}, []);
 
   const loadHistory =
@@ -22,6 +23,10 @@ function App() {
     };
 
   async function solve() {
+  	   if (hasErrors) {
+	    alert("Incorrect values in matrix");
+	    return;
+	  }
 	  const matrixDataA = matrixA.map(row => row.map(cell => convertToComplex(cell)));
 	  const matrixDataB = matrixB.map(row => row.map(cell => convertToComplex(cell)));
 	  const response = await fetch("http://127.0.0.1:8000/matrix",
@@ -44,13 +49,13 @@ function App() {
 	  const data = await response.json();
 	  setResult(data);
 	  loadHistory();
-	}
+	  }
   async function clearA() { 
-  	const updated = matrixA.map((row, rowIndex) => row.map((value, colIndex) => (0)));
+  	const updated = matrixA.map((row, rowIndex) => row.map((value, colIndex) => ("0")));
   	setMatrixA(updated); 
   	}
   async function clearB() { 
-  	const updated = matrixB.map((row, rowIndex) => row.map((value, colIndex) => (0)));
+  	const updated = matrixB.map((row, rowIndex) => row.map((value, colIndex) => ("0")));
   	setMatrixB(updated); 
   	}
   
@@ -77,25 +82,37 @@ function App() {
   function updateCell(row, col, value) {
 	  const updated = matrixA.map((r, ri) => r.map((c, ci) => (ri === row && ci === col ? value : c)));
 	  setMatrixA(updated);
+	  const anyError = updated.some(r => r.some(c => !isValidInput(c)));
+  	  setHasErrors(anyError);
 	}
   function updateCellB(row, col, value) {
  	  const updated = matrixB.map((r, ri) => r.map((c, ci) => (ri === row && ci === col ? value : c)));
 	  setMatrixB(updated);
+	  const anyError = updated.some(r => r.some(c => !isValidInput(c)));
+  	  setHasErrors(anyError);
 	}
-	
+ function isValidInput(value) {
+	  if (value === "" || value === 0 || value === "0") return true;
+	  const trimmed = String(value).trim(); 
+	  const unwrapped = trimmed.startsWith("(") && trimmed.endsWith(")")
+	    ? trimmed.slice(1, -1).trim() : trimmed;
+	  const complexRegex = /^[+-]?(\d+(\.\d+)?)([+-](\d+(\.\d+)?)?[ij])?$|^[+-]?(\d+(\.\d+)?)?[ij]$/;
+	  return complexRegex.test(unwrapped);
+	}
  function check_value(value) {
  	if (typeof value === "string") {
- 		value = convertToComplex(value)
- 		return value.toString()
- 	}
+ 		value = convertToComplex(value);
+		return value.toString();
+		}
+
  	return Number(value).toFixed(2)
- }
+  }
  
  function check_matrix(matrixData) {
  	if (typeof matrixData === 'string'){
-	  	matrixData = JSON.parse(matrixData)
+	  	matrixData = JSON.parse(matrixData);
 	  }
-	return matrixData
+	return matrixData;
  }
  	
  function renderMatrix(matrixData, code) {
@@ -246,7 +263,7 @@ function App() {
 		          type="text"
 		          value={cell}
 		          onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
-		          className="matrix-input"
+		          className={`matrix-input ${!isValidInput(cell) && cell !== "" ? "matrix-input--error" : ""}`}
 		        />
 		      )
 		    )
@@ -321,7 +338,7 @@ function App() {
 		        type="text"
 		        value={cell}
 		        onChange={(e) => updateCellB(rowIndex, colIndex, e.target.value)}
-		        className="matrix-input"
+		        className={`matrix-input ${!isValidInput(cell) && cell !== "" ? "matrix-input--error" : ""}`}
 		      />
 		    )
 		  )}
@@ -344,11 +361,7 @@ function App() {
           Solve
         </button>
         {result && (
-	  <div
-	    style={{
-	      marginTop: "20px"
-	    }}
-	  >
+	  <div style={{ marginTop: "20px", overflowX: "auto", maxWidth: "100%" }}>
 	    {(result.determinant !== undefined && result.code !== -4 && (
 	      <p>
 		determinant:
@@ -465,10 +478,19 @@ function App() {
 		  rank ={" "}{item.rank}
 		</p>
 	 	<button
-		  onClick={() => {
-		    setMatrixA(check_matrix(item.result));
+		  onClick={() => { 
+			  const mat = check_matrix(item.result);
+			  const formatted = mat.map(row =>
+			    row.map(cell => {
+			      console.log("raw cell:", cell, typeof cell);
+			      const c = convertToComplex(String(cell));
+			      console.log("converted:", c.toString());
+			      return c.toString();
+			    })
+			  );
 		    setRowsA(check_matrix(item.result).length);
 		    setColsA(check_matrix(item.result)[0].length);
+		    setMatrixA(formatted);
 		  }}
 		>
 		  Use this matrix

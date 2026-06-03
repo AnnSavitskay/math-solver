@@ -112,33 +112,37 @@ code {
 
 .matrix-grid {
   display: inline-block;
-  padding: 12px 16px;
-  border-left: 3px solid white;
-  border-right: 3px solid white;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  border-right: 3px solid var(--accent);
+  margin: 10px 0;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .matrix-row {
   display: flex;
   justify-content: center;
-  gap: 10px;  
+  gap: 12px;
   margin: 6px 0;
 }
 
 .matrix-cell {
-  width: 90px;
+  min-width: 70px;
+  width: auto;
   text-align: center;
-  font-family: monospace;
-  font-size: 20px;
+  font-family: 'Arial', sans-serif;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .matrix-input {
-  width: 80px;
+  width: 100px;      
   height: 48px;
   text-align: center;
-  font-size: 20px;
-  font-family: 'Arial', sans-serif; 
+  font-size: 14px;   
+  font-family: 'Arial', sans-serif;
   font-variant-numeric: tabular-nums;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -146,12 +150,15 @@ code {
   color: var(--text-h);
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
-  letter-spacing: 0.5px;
 }
 
 .matrix-input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.matrix-input--error {
+  border-color: #e05555;
+  box-shadow: 0 0 0 3px rgba(224, 85, 85, 0.2);
 }
 
 button {
